@@ -25,11 +25,18 @@ class tile:
         self.multiplier = multiplier # for displaying purposes
         self.rect = pygame.Rect(self.x, self.y, width, height)
 
-board = {1: (1,1), 2: (2,1), 3: (3,1), 4: (4,1),
+board = {}
+for i in range(16):
+    x = (i % 4) +1
+    y = (i - (i % 4)) // 4 +1
+    board[i+1] = (x, y)
+
+'''board = {1: (1,1), 2: (2,1), 3: (3,1), 4: (4,1),
         5: (1,2), 6: (2,2), 7: (3,2), 8: (4,2),
         9: (1,3), 10: (2,3), 11: (3,3), 12: (4,3),
-        13: (1,4), 14: (2,4), 15: (3,4), 16: (4,4)}
+        13: (1,4), 14: (2,4), 15: (3,4), 16: (4,4)}'''
 
+# make board dict have open bool & available_spaces derive values from board dict
 available_spaces = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
 tiles = []
