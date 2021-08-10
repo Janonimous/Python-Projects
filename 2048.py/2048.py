@@ -20,13 +20,13 @@ class tile:
     16: (245, 249, 99), 32: (246, 124, 95), 64: (246, 94, 59), 128: (237, 207, 114),
     256: (237, 204, 97), 512: (237, 200, 80), 1024: (237, 197, 63), 2048: (237, 194, 96)}
 
-    def __init__(self, x, y, width, height, type):
+    def __init__(self, x, y, width, height, space, type):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.space = space
         self.type = type
-        self.offset = [0, 0]
         self.rect = pygame.Rect(self.x, self.y, width, height)
         self.color = self.get_color()
 
@@ -34,21 +34,58 @@ class tile:
         color = tile.tile_colors[self.type]
         return color
 
+    def set_pos(self, x, y):
+        self.x = x
+        self.y = y
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+
+    def move(self, direction, board, board_layout):
+        space = self.space
+        num_rows = len(board_layout)
+        if direction == "up":
+            while True:
+                next_space = space - num_rows
+                if next_space <= 0:
+                    break
+                if board[next_space]["open"]:
+                    space = next_space
+        if direction == "down":
+            while True:
+                next_space = space + num_rows
+                if next_space > len(board):
+                    break
+                if board[next_space]["open"]:
+                    space = next_space
+
+        #current_row_positions = % 4 the row along with space and next_space
+        if direction == "left":
+            next_space = space -1
+        if direction == "right":
+            next_space = space +1
+
+        # move tile and at the tile's new space set the board at that space to closed (open: False)
+
+
     def display(self, surf):
         pygame.draw.rect(surf, self.color, self.rect)
+
+space_length = 125
 
 rows = 4 # length of columns
 columns = 4 # length of rows
 board_layout = [[y+(x*4)+1 for y in range(columns)] for x in range(rows)]
+print(board_layout)
 board = {}
 for i in range(rows*columns):
-    x = ((i % rows) * 125) + 250
-    y = (((i - (i % columns)) // 4) * 125) + 250
+    x = ((i % rows) * space_length) + 250
+    y = (((i - (i % columns)) // 4) * space_length) + 250
     board[i+1] = {}
     board[i+1]["coords"], board[i+1]["open"] = (x, y), True
+print(board)
 
 tiles = []
 available_spaces = []
+move_directions = {"up": False, "down": False, "left": False, "right": False}
 start = True
 
 def check_spaces():
@@ -61,7 +98,7 @@ def generate_tile():
     if len(available_spaces) != 0:
         board_space = random.choice(available_spaces)
         x, y = board[board_space]["coords"]
-        t_obj = tile(x, y, 125, 125, 2)
+        t_obj = tile(x, y, space_length, space_length, board_space, 2)
         tiles.append(t_obj)
         available_spaces.pop(available_spaces.index(board_space))
 
@@ -92,6 +129,15 @@ while True:
                 pygame.quit()
                 sys.exit()
 
+            if event.key == K_UP:
+                move_directions["up"] = True
+            if event.key == K_DOWN:
+                move_directions["down"] = True
+            if event.key == K_RIGHT:
+                move_directions["right"] = True
+            if event.key == K_LEFT:
+                move_directions["left"] = True
+
             if event.key == K_1:
                 start = True
                 tiles.clear()
@@ -99,7 +145,17 @@ while True:
                 for i in range(16):
                     available_spaces.append(i+1)
             if event.key == K_2:
-                start = True
+                generate_tile()
+
+        if event.type == KEYUP:
+            if event.key == K_UP:
+                move_directions["up"] = True
+            if event.key == K_DOWN:
+                move_directions["down"] = True
+            if event.key == K_RIGHT:
+                move_directions["right"] = True
+            if event.key == K_LEFT:
+                move_directions["left"] = True
 
 
     pygame.display.update()
