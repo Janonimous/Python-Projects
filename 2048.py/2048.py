@@ -8,6 +8,8 @@ pygame.init()
 pygame.display.set_caption('2048')
 screen = pygame.display.set_mode((1000, 1000), 0, 32)
 
+''' May want to change tile nums to go from (0-15) instead of (1-16) '''
+
 '''
     tile colors (238, 228, 218), (237, 224, 200),
     (242, 177, 121), (245, 249, 99), (246, 124, 95), (246, 94, 59),
@@ -39,9 +41,13 @@ class tile:
         self.y = y
         self.rect = pygame.Rect(x, y, self.width, self.height)
 
+    def set_space(self, space):
+        self.space = space
+
     def move(self, direction, board, board_layout):
         space = self.space
         num_rows = len(board_layout)
+        num_columns = len(board_layout[0])
         if direction == "up":
             while True:
                 next_space = space - num_rows
@@ -56,12 +62,27 @@ class tile:
                     break
                 if board[next_space]["open"]:
                     space = next_space
-
-        #current_row_positions = % 4 the row along with space and next_space
+        row_num = (space-1) // num_columns
+        relative_space = ((space-1) % num_columns) +1
         if direction == "left":
-            next_space = space -1
+            while True:
+                next_space = relative_space -1
+                if next_space <= 0:
+                    break
+                if board[next_space]["open"]:
+                    space = next_space
         if direction == "right":
-            next_space = space +1
+            while True:
+                next_space = relative_space +1
+                if next_space > num_columns:
+                    break
+                if board[next_space]["open"]:
+                    space = next_space
+
+        new_coords = board[space]["coords"]
+        self.set_pos(new_coords[0], new_coords[1])
+        self.set_space(space)
+        board[space]["open"] = False
 
         # move tile and at the tile's new space set the board at that space to closed (open: False)
 
@@ -113,6 +134,10 @@ while True:
         for t in range(2):
             generate_tile()
         start = False
+
+    for direction in move_directions:
+        if direction:
+            
 
     board_rect = pygame.Rect(250, 250, 500, 500)
     pygame.draw.rect(screen, (187, 173, 160), board_rect)
