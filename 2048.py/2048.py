@@ -49,7 +49,6 @@ class tile:
         next_space = self.space
         num_rows = len(board_layout)
         num_columns = len(board_layout[0])
-        print(direction)
         if direction == "up":
             for c in range(num_columns):
                 next_space -= num_rows
@@ -68,12 +67,10 @@ class tile:
                 if (not board[next_space]["open"]):
                     next_space -= num_rows
                     break
-        row_num = (prev_space-1) // num_columns
-        relative_space = ((prev_space-1) % num_columns) +1
         if direction == "left":
             for r in range(num_rows):
-                next_space = relative_space -1
-                if (next_space <= 0):
+                next_space = prev_space -1
+                if ((next_space % num_columns) == 0):
                     next_space += 1
                     break
                 if (not board[next_space]["open"]):
@@ -81,8 +78,8 @@ class tile:
                     break
         if direction == "right":
             for r in range(num_rows):
-                next_space = relative_space +1
-                if (next_space > num_columns):
+                next_space = prev_space +1
+                if ((prev_space % num_columns) == 0):
                     next_space -= 1
                     break
                 if (not board[next_space]["open"]):
@@ -110,8 +107,6 @@ for i in range(rows*columns):
     y = (((i - (i % columns)) // 4) * space_length) + 250
     board[i+1] = {}
     board[i+1]["coords"], board[i+1]["open"] = (x, y), True
-print(board)
-print(board_layout)
 
 tiles = []
 available_spaces = []
@@ -124,7 +119,7 @@ def check_spaces():
         if board[key]["open"] == True:
             available_spaces.append(key)
 
-def generate_tile(): # Currently very buggy
+def generate_tile():
     if len(available_spaces) != 0:
         board_space = random.choice(available_spaces)
         x, y = board[board_space]["coords"]
@@ -133,6 +128,13 @@ def generate_tile(): # Currently very buggy
         board[board_space]["open"] = False
         available_spaces.pop(available_spaces.index(board_space))
 
+def refresh():
+    tiles.clear()
+    available_spaces.clear()
+    for i in range(len(board)):
+        available_spaces.append(i+1)
+        board[i+1]["open"] = True
+
 check_spaces()
 
 
@@ -140,15 +142,17 @@ while True:
 
     screen.fill((249, 249, 239))
 
+    check_spaces()
+
     if start:
-        for t in range(1):
+        for t in range(2):
             generate_tile()
         start = False
 
     for direction in move_directions:
         if move_directions[direction]:
-            for tile in tiles:
-                tile.move(direction, board, board_layout)
+            for t in tiles:
+                t.move(direction, board, board_layout)
 
     board_rect = pygame.Rect(250, 250, 500, 500)
     pygame.draw.rect(screen, (187, 173, 160), board_rect)
@@ -176,10 +180,7 @@ while True:
 
             if event.key == K_1:
                 start = True
-                tiles.clear()
-                available_spaces.clear()
-                for i in range(16):
-                    available_spaces.append(i+1)
+                refresh()
             if event.key == K_2:
                 generate_tile()
 
