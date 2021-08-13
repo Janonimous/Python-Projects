@@ -44,7 +44,13 @@ class tile:
     def set_space(self, space):
         self.space = space
 
-    def move(self, direction, board, board_layout):
+    def set_type(self, type):
+        self.type = type
+
+    def merge(self):
+        pass
+
+    def move(self, direction, board, board_layout, obj):
         prev_space = self.space
         next_space = self.space
         num_rows = len(board_layout)
@@ -55,7 +61,7 @@ class tile:
                 if (next_space <= 0):
                     next_space += num_rows
                     break
-                if (not board[next_space]["open"]):
+                if board[next_space]["obj"] != None:
                     next_space += num_rows
                     break
         if direction == "down":
@@ -64,7 +70,7 @@ class tile:
                 if (next_space > len(board)):
                     next_space -= num_rows
                     break
-                if (not board[next_space]["open"]):
+                if board[next_space]["obj"] != None:
                     next_space -= num_rows
                     break
         if direction == "left":
@@ -73,7 +79,7 @@ class tile:
                 if ((next_space % num_columns) == 0):
                     next_space += 1
                     break
-                if (not board[next_space]["open"]):
+                if board[next_space]["obj"] != None:
                     next_space += 1
                     break
         if direction == "right":
@@ -82,15 +88,16 @@ class tile:
                 if ((prev_space % num_columns) == 0):
                     next_space -= 1
                     break
-                if (not board[next_space]["open"]):
+                if board[next_space]["obj"] != None:
                     next_space -= 1
                     break
+
         if prev_space != next_space:
             new_coords = board[next_space]["coords"]
             self.set_pos(new_coords[0], new_coords[1])
             self.set_space(next_space)
-            board[next_space]["open"] = False
-            board[prev_space]["open"] = True
+            board[next_space]["obj"] = obj
+            board[prev_space]["obj"] = None
             check_spaces()
 
     def display(self, surf):
@@ -106,7 +113,9 @@ for i in range(rows*columns):
     x = ((i % rows) * space_length) + 250
     y = (((i - (i % columns)) // 4) * space_length) + 250
     board[i+1] = {}
-    board[i+1]["coords"], board[i+1]["open"] = (x, y), True
+    board[i+1]["coords"], board[i+1]["obj"] = (x, y), None
+print(board)
+print(board_layout)
 
 tiles = []
 available_spaces = []
@@ -115,8 +124,9 @@ start = True
 
 def check_spaces():
     #available_spaces = [key for key in board if board[key]["open"] == True]
+    available_spaces.clear()
     for key in board:
-        if board[key]["open"] == True:
+        if board[key]["obj"] == None:
             available_spaces.append(key)
 
 def generate_tile():
@@ -125,7 +135,7 @@ def generate_tile():
         x, y = board[board_space]["coords"]
         t_obj = tile(x, y, space_length, space_length, board_space, 2)
         tiles.append(t_obj)
-        board[board_space]["open"] = False
+        board[board_space]["obj"] = t_obj
         available_spaces.pop(available_spaces.index(board_space))
 
 def refresh():
@@ -133,7 +143,7 @@ def refresh():
     available_spaces.clear()
     for i in range(len(board)):
         available_spaces.append(i+1)
-        board[i+1]["open"] = True
+        board[i+1]["obj"] = None
 
 check_spaces()
 
@@ -152,7 +162,7 @@ while True:
     for direction in move_directions:
         if move_directions[direction]:
             for t in tiles:
-                t.move(direction, board, board_layout)
+                t.move(direction, board, board_layout, t)
 
     board_rect = pygame.Rect(250, 250, 500, 500)
     pygame.draw.rect(screen, (187, 173, 160), board_rect)
@@ -169,13 +179,13 @@ while True:
                 pygame.quit()
                 sys.exit()
 
-            if event.key == K_UP:
+            if event.key == K_UP or event.key == K_w:
                 move_directions["up"] = True
-            if event.key == K_DOWN:
+            if event.key == K_DOWN or event.key == K_s:
                 move_directions["down"] = True
-            if event.key == K_RIGHT:
+            if event.key == K_RIGHT or event.key == K_d:
                 move_directions["right"] = True
-            if event.key == K_LEFT:
+            if event.key == K_LEFT or event.key == K_a:
                 move_directions["left"] = True
 
             if event.key == K_1:
@@ -185,13 +195,13 @@ while True:
                 generate_tile()
 
         if event.type == KEYUP:
-            if event.key == K_UP:
+            if event.key == K_UP or event.key == K_w:
                 move_directions["up"] = False
-            if event.key == K_DOWN:
+            if event.key == K_DOWN or event.key == K_s:
                 move_directions["down"] = False
-            if event.key == K_RIGHT:
+            if event.key == K_RIGHT or event.key == K_d:
                 move_directions["right"] = False
-            if event.key == K_LEFT:
+            if event.key == K_LEFT or event.key == K_a:
                 move_directions["left"] = False
 
 
