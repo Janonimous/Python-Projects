@@ -1,12 +1,17 @@
 #!/usr/bin/env/python3.9
 
-import pygame, sys, random, math
+import pygame
+import random
+import sys
 from pygame.locals import *
 
 clock = pygame.time.Clock()
 pygame.init()
 pygame.display.set_caption('2048')
 screen = pygame.display.set_mode((1000, 1000), 0, 32)
+def short():
+    pygame.quit()
+    sys.exit()
 
 ''' May want to change tile nums to go from (0-15) instead of (1-16) '''
 
@@ -22,6 +27,8 @@ class tile:
     16: (245, 249, 99), 32: (246, 124, 95), 64: (246, 94, 59), 128: (237, 207, 114),
     256: (237, 204, 97), 512: (237, 200, 80), 1024: (237, 197, 63), 2048: (237, 194, 96)}
 
+    mergable_tiles = {}
+
     def __init__(self, x, y, width, height, space, type):
         self.x = x
         self.y = y
@@ -32,9 +39,8 @@ class tile:
         self.rect = pygame.Rect(self.x, self.y, width, height)
         self.color = self.get_color()
 
-    def get_color(self):
-        color = tile.tile_colors[self.type]
-        return color
+    def set_color(self, type):
+        self.color = tile.tile_colors[type]
 
     def set_pos(self, x, y):
         self.x = x
@@ -45,17 +51,59 @@ class tile:
         self.space = space
 
     def set_type(self, type):
+        if type != self.type:
+            self.set_color(type)
         self.type = type
 
-    def merge(self):
-        pass
+    def get_type(self):
+        return self.type
+
+    def get_color(self):
+        color = tile.tile_colors[self.type]
+        return color
+
+    def find_mergable_tiles(num_rows, num_columns):
+        tiles = {'up': [], 'down': [], 'left': [], 'right': []}
+        for direction in tiles:
+            if direction == 'up' or direction == 'down':
+                for r in range(num_rows-1):
+                    for c in range(num_columns):
+                        if direction == 'up':
+                            tiles['up'].append((r+1)*num_columns+c+1)
+                        if direction == 'down':
+                            tiles['down'].append(r*num_columns+c+1)
+            if direction == 'left' or direction == 'right':
+                for r in range(num_rows):
+                    for c in range(num_columns-1):
+                        if direction == 'left':
+                            tiles['left'].append(r*num_columns+c+2)
+                        if direction == 'right':
+                            tiles['right'].append(r*num_columns+c+1)
+        tile.mergable_tiles = tiles
+
+    def check_merge(self, current_tile, front_tile, c_space, f_space, board, tiles):
+        same_type = current_tile.get_type() == front_tile.get_type()
+        if same_type:
+
+            #print([front_tile, tiles])
+            #tiles.remove(front_tile)
+            print([current_tile, front_tile])
+            del front_tile
+            #print(tiles)
+            #current_tile.set_type(current_tile.get_type()*2)
+            board[f_space]["obj"] = current_tile
+            board[c_space]["obj"] = None
 
     def move(self, direction, board, board_layout, obj):
         prev_space = self.space
         next_space = self.space
+        mergable_tiles = []
         num_rows = len(board_layout)
         num_columns = len(board_layout[0])
         if direction == "up":
+            for r in range(num_rows-1):
+                for c in range(num_columns):
+                    mergable_tiles.append(board_layout[r+1][c])
             for c in range(num_columns):
                 next_space -= num_rows
                 if (next_space <= 0):
@@ -65,14 +113,16 @@ class tile:
                     next_space += num_rows
                     break
         if direction == "down":
-            for c in range(num_columns):
-                next_space += num_rows
-                if (next_space > len(board)):
-                    next_space -= num_rows
-                    break
-                if board[next_space]["obj"] != None:
-                    next_space -= num_rows
-                    break
+            if not (next_space+num_rows) > len(board)-num_columns:
+                for c in range(num_columns):
+                    next_space += num_rows
+                    if (next_space > len(board)):
+                        next_space -= num_rows
+                        #print([prev_space, next_space])
+                        break
+                    if board[next_space]["obj"] != None:
+                        next_space -= num_rows
+                        break
         if direction == "left":
             for r in range(num_rows):
                 next_space = prev_space -1
@@ -92,7 +142,12 @@ class tile:
                     next_space -= 1
                     break
 
-        if prev_space != next_space:
+        if board[next_space]["obj"] != None and next_space in tile.mergable_tiles[direction]:
+            print([direction, prev_space, next_space])
+            current_tile = board[prev_space]["obj"]
+            front_tile = board[next_space]["obj"]
+            self.check_merge(current_tile, front_tile, prev_space, next_space, board, tiles)
+        elif prev_space != next_space:
             new_coords = board[next_space]["coords"]
             self.set_pos(new_coords[0], new_coords[1])
             self.set_space(next_space)
@@ -114,6 +169,7 @@ for i in range(rows*columns):
     y = (((i - (i % columns)) // 4) * space_length) + 250
     board[i+1] = {}
     board[i+1]["coords"], board[i+1]["obj"] = (x, y), None
+tile.find_mergable_tiles(rows, columns)
 print(board)
 print(board_layout)
 
@@ -163,6 +219,8 @@ while True:
         if move_directions[direction]:
             for t in tiles:
                 t.move(direction, board, board_layout, t)
+            #generate_tile()
+
 
     board_rect = pygame.Rect(250, 250, 500, 500)
     pygame.draw.rect(screen, (187, 173, 160), board_rect)
